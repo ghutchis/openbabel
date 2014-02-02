@@ -139,11 +139,11 @@ namespace OpenBabel
     void SetValue(const ValueT t)             { _value = t;     }
     virtual const ValueT &GetGenericValue() const    { return(_value); }
     const ValueT &GetGenericValueDef(const ValueT &def_val) const
-    { 
+    {
       if(this == NULL)
 	return def_val;
-      else	
-        return GetGenericValue(); 
+      else
+        return GetGenericValue();
     }
   };
 
@@ -855,6 +855,9 @@ namespace OpenBabel
     //! Raman activities
     std::vector<double>  _vRamanActivities;
 
+    //! Symmetry labels
+    std::vector< std::string > _vSymmetryLabels;
+
   public:
     OBVibrationData(): OBGenericData("VibrationData", OBGenericDataType::VibrationData){};
     virtual ~OBVibrationData() {}
@@ -879,6 +882,8 @@ namespace OpenBabel
       { return this->_vIntensities; }
     std::vector<double> GetRamanActivities() const
       { return this->_vRamanActivities; }
+    std::vector< std::string > GetSymmetryLabels() const
+      { return this->_vSymmetryLabels; }
 
     unsigned int GetNumberOfFrequencies() const;
 };
@@ -1110,7 +1115,7 @@ namespace OpenBabel
   {
   protected:
     double _x,_y,_z,_V;
-    
+
   public:
     OBFreeGridPoint() {};
     OBFreeGridPoint(double x,double y,double z,double V) { _x = x; _y = y; _z = z; _V = V; }
@@ -1124,7 +1129,7 @@ namespace OpenBabel
     void SetZ(double z) { _z = z; }
     void SetV(double V) { _V = V; }
   };
-  
+
   //! A standard iterator over a vector of FreeGridPoints
   typedef std::vector<OBFreeGridPoint*>::iterator OBFreeGridPointIterator;
 
@@ -1137,35 +1142,35 @@ namespace OpenBabel
     std::vector<OBFreeGridPoint*> _points;  //!< coordinates with accompanying float values
   public:
 
-    OBFreeGrid() 
+    OBFreeGrid()
     {
     }
-    
-    ~OBFreeGrid() 
+
+    ~OBFreeGrid()
     {
       //delete _points;
     }
 
-    int NumPoints() 
-    { 
-      return _points.size(); 
+    int NumPoints()
+    {
+      return _points.size();
     }
-    
-    void AddPoint(double x,double y,double z, double V) 
+
+    void AddPoint(double x,double y,double z, double V)
     {
       _points.push_back(new OpenBabel::OBFreeGridPoint(x,y,z,V));
     }
 
-    OBFreeGridPointIterator BeginPoints() 
-    { 
-      return _points.begin(); 
-    }
-    
-    OBFreeGridPointIterator EndPoints() 
+    OBFreeGridPointIterator BeginPoints()
     {
-      return _points.begin() + NumPoints(); 
+      return _points.begin();
     }
-    
+
+    OBFreeGridPointIterator EndPoints()
+    {
+      return _points.begin() + NumPoints();
+    }
+
     OBFreeGridPoint *BeginPoint(OBFreeGridPointIterator &i)
     {
       i = _points.begin();
