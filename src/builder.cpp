@@ -75,6 +75,26 @@ namespace OpenBabel
   std::map<std::string, std::vector<vector3> > OBBuilder::_rigid_fragments_cache;
   std::vector<std::pair<OBSmartsPattern*, std::vector<vector3> > > OBBuilder::_ring_fragments;
 
+  void OBBuilder::AddRingFragment(OBSmartsPattern *sp, const std::vector<vector3> &coords)
+  {
+    bool hasAllZeroCoords = true;
+    for (std::size_t i = 0; i < coords.size(); ++i) {
+      if (std::fabs(coords[i].x()) > 10e-8 ||
+          std::fabs(coords[i].y()) > 10e-8 ||
+          std::fabs(coords[i].z()) > 10e-8) {
+        hasAllZeroCoords = false;
+        break;
+      }
+    }
+
+    if (hasAllZeroCoords) {
+      std::stringstream ss;
+      ss << "Ring fragment " << sp->GetSMARTS() << " in ring-fragments.txt has all zero coordinates. Ignoring fragment.";
+      obErrorLog.ThrowError(__FUNCTION__, ss.str(), obError);
+    } else
+      _ring_fragments.push_back(pair<OBSmartsPattern*, vector<vector3> > (sp, coords));
+  }
+
   void OBBuilder::LoadFragments()  {
     // open data/fragments.txt
     ifstream ifs;
@@ -111,7 +131,7 @@ namespace OpenBabel
 
       if (vs.size() == 1) { // SMARTS pattern
         if (sp != NULL)
-          _ring_fragments.push_back(pair<OBSmartsPattern*, vector<vector3> > (sp, coords));
+          AddRingFragment(sp, coords);
 
         coords.clear();
         sp = new OBSmartsPattern;
@@ -125,7 +145,7 @@ namespace OpenBabel
         coords.push_back(coord);
       }
     }
-    _ring_fragments.push_back(pair<OBSmartsPattern*, vector<vector3> > (sp, coords));
+    AddRingFragment(sp, coords);
 
     // return the locale to the original one
     obLocale.RestoreLocale();
@@ -161,15 +181,27 @@ namespace OpenBabel
     ifs.seekg(_rigid_fragments_index[smiles]);
     char buffer[BUFF_SIZE];
     vector<string> vs;
+    bool hasAllZeroCoords = true;
     while (ifs.getline(buffer, BUFF_SIZE)) {
       tokenize(vs, buffer);
       if (vs.size() == 4) { // XYZ coordinates
         vector3 coord(atof(vs[1].c_str()), atof(vs[2].c_str()), atof(vs[3].c_str()));
+        if (std::fabs(coord.x()) > 10e-8 ||
+            std::fabs(coord.y()) > 10e-8 ||
+            std::fabs(coord.z()) > 10e-8)
+          hasAllZeroCoords = false;
         coords.push_back(coord);
       } else if (vs.size() == 1) { // SMARTS pattern
         break;
       }
     }
+
+    if (hasAllZeroCoords) {
+      std::stringstream ss;
+      ss << "Rigid fragment " << smiles << " in rigid-fragments.txt has all zero coordinates.";
+      obErrorLog.ThrowError(__FUNCTION__, ss.str(), obError);
+    }
+
     return coords;
   }
 
@@ -278,10 +310,10 @@ namespace OpenBabel
         if (bond2 == VZero || v1 == VZero) {
           vector3 vrand;
           vrand.randomUnitVector();
-          double angle = fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
+          double angle = std::fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
           while (angle < 45.0 || angle > 135.0) {
             vrand.randomUnitVector();
-            angle = fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
+            angle = std::fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
           }
           // there is no a-2 atom
           v1 = cross(bond1, vrand); // so find a perpendicular, given the random vector (this doesn't matter here)
@@ -336,7 +368,7 @@ namespace OpenBabel
         v1 = v1.normalize();
 
         if (atom->GetHyb() == 2)
-          newbond = v1; 
+          newbond = v1;
         else if (atom->GetHyb() == 3) {
           v2 = cross(bond1, bond2); // find the perpendicular
           v2.normalize();
@@ -349,10 +381,10 @@ namespace OpenBabel
            * whether PClF4 would be more likely to have an equatorial or axial Cl-P bond */
           vector3 vrand;
           vrand.randomUnitVector();
-          double angle = fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
+          double angle = std::fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
           while (angle < 45.0 || angle > 135.0) {
             vrand.randomUnitVector();
-            angle = fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
+            angle = std::fabs(acos(dot(bond1, vrand)) * RAD_TO_DEG);
           }
           v1 = cross(bond1, vrand);
           v1 = v1.normalize();
@@ -778,10 +810,10 @@ namespace OpenBabel
         else
           secondDir.randomUnitVector(); // pick something at random
         // but not too shallow, or the cross product won't work well
-        double angle = fabs(acos(dot(firstDir, secondDir)) * RAD_TO_DEG);
+        double angle = std::fabs(acos(dot(firstDir, secondDir)) * RAD_TO_DEG);
         while (angle < 45.0 || angle > 135.0) {
           secondDir.randomUnitVector();
-          angle = fabs(acos(dot(firstDir, secondDir)) * RAD_TO_DEG);
+          angle = std::fabs(acos(dot(firstDir, secondDir)) * RAD_TO_DEG);
         }
         // Now we find a perpendicular vector to the fragment
         crossdir = cross(firstDir, secondDir);
